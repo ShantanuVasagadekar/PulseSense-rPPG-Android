@@ -113,7 +113,7 @@ The compiled debug APK is located at:
 android-app/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-To install on your connected Poco F5:
+To install on your connected android:
 ```bash
 adb install -r "c:\Users\Shantanu Vasagadekar\Downloads\rPPG-Toolbox-main\rPPG-Toolbox-main\android-app\app\build\outputs\apk\debug\app-debug.apk"
 adb shell am start -n com.rppg.vitals/.MainActivity
