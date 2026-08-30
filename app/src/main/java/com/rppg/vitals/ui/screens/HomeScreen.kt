@@ -139,7 +139,7 @@ fun HomeScreen(onStartMeasurement: () -> Unit) {
 
             // App name
             Text(
-                text = "PulseSense",
+                text = "AuraHealth",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary

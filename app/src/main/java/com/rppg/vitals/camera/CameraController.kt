@@ -39,6 +39,7 @@ class CameraController(
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val faceDetectScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    @Volatile private var isStopped = false
     private var cameraProvider: ProcessCameraProvider? = null
     private var preview: Preview? = null
     private var imageAnalysis: ImageAnalysis? = null
@@ -62,11 +63,17 @@ class CameraController(
         lifecycleOwner: LifecycleOwner,
         previewSurfaceProvider: Preview.SurfaceProvider
     ) {
+        isStopped = false
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             try {
                 val provider = cameraProviderFuture.get()
                 cameraProvider = provider
+
+                if (isStopped) {
+                    provider.unbindAll()
+                    return@addListener
+                }
 
                 val cameraSelector = CameraSelector.Builder()
                     .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
@@ -84,7 +91,11 @@ class CameraController(
                     .build()
                     .also { analysis ->
                         analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                            processFrame(imageProxy)
+                            if (!isStopped) {
+                                processFrame(imageProxy)
+                            } else {
+                                imageProxy.close()
+                            }
                         }
                     }
 
@@ -187,9 +198,18 @@ class CameraController(
     }
 
     fun stopCamera() {
-        cameraProvider?.unbindAll()
+        isStopped = true
+        ContextCompat.getMainExecutor(context).execute {
+            try {
+                cameraProvider?.unbindAll()
+            } catch (e: Exception) {
+                Log.w(TAG, "[StopCameraWarn] ${e.message}")
+            }
+        }
         faceDetectScope.cancel()
-        cameraExecutor.shutdown()
+        if (!cameraExecutor.isShutdown) {
+            cameraExecutor.shutdown()
+        }
     }
 }
 

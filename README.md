@@ -1,6 +1,7 @@
-# PulseSense — On-Device rPPG Heart Rate Vitals Monitor
+# AuraHealth — On-Device Contactless rPPG Heart Rate Monitor
 
-**Edge-Native Remote Photoplethysmography (rPPG) on Android (Poco F5 Reference Target)**
+**Edge-Native Remote Photoplethysmography (rPPG) on Android**  
+*(Reference Target: Xiaomi Poco F5 / Qualcomm Snapdragon 7+ Gen 2)*
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple.svg)](https://kotlinlang.org)
 [![Android SDK](https://img.shields.io/badge/Compile%20SDK-36-blue.svg)](https://developer.android.com)
@@ -10,111 +11,105 @@
 
 ---
 
-## 🎯 Project Overview
+## 🎯 Overview
 
-PulseSense turns an off-the-shelf Android smartphone into a contact-free physiological vitals monitor. Using only the device's front-facing camera, PulseSense measures micro-variations in facial skin reflectance caused by pulsating blood volume during cardiac cycles (remote photoplethysmography).
+**AuraHealth** turns an off-the-shelf Android smartphone into a contact-free physiological vitals monitor. By leveraging the device's front-facing camera, AuraHealth measures micro-variations in facial skin reflectance caused by blood volume changes during cardiac cycles (Remote Photoplethysmography — rPPG).
 
-- **100% On-Device & Offline**: No cloud APIs, zero network permissions.
-- **Reference Target**: Optimized for Qualcomm Snapdragon 7+ Gen 2 (Poco F5) running continuous 30.0 FPS.
-- **Pure Native Signal Processing**: Native Kotlin port of the **Plane-Orthogonal-to-Skin (POS)** algorithm (*Wang et al., IEEE TBME 2017*) with advanced sub-harmonic analysis.
+- **100% Edge-Native & Offline**: Runs entirely on the device. No cloud services, no backend servers, zero video data stored or transmitted.
+- **Hardware Reference**: Tested and benchmarked on the **Poco F5** (Snapdragon 7+ Gen 2) at continuous 30.0 FPS.
+- **Scientific Signal Processing**: Built with a native Kotlin implementation of the **Plane-Orthogonal-to-Skin (POS)** algorithm (*Wang et al., IEEE TBME 2017*) enhanced with multi-ROI spatial averaging and zero-phase Butterworth filtering.
 
 ---
 
-## 🔬 169 BPM Investigation & Resolution
+## 🚀 Key Features
 
-### Root Cause Analysis
+- **Real-Time Face & ROI Tracking**: Uses Google ML Kit Face Detection to isolate forehead and cheek regions for optimal pulse signal acquisition.
+- **Zero-Copy Lossless YUV Extraction**: Direct pixel extraction from camera YUV_420_888 byte buffers without lossy compression or garbage collection overhead.
+- **Robust POS Algorithm**: Projects temporal RGB color variations onto an orthogonal plane to separate blood volume pulse signals from motion and illumination artifacts.
+- **Sub-Harmonic & Harmonic Resolution**: Advanced spectral peak analysis with parabolic interpolation to accurately extract fundamental heart rate frequencies.
+- **Modern Jetpack Compose UI**: Sleek dark-mode aesthetic with real-time waveform visualization, BPM confidence metrics, and face framing guides.
 
-When evaluating raw rPPG algorithms under camera lighting or facial motion, estimates frequently spike to approximately **168–169 BPM** due to three interacting factors:
+---
 
-1. **Pulse Wave Non-Sinusoidal Harmonics**:
-   The human blood volume pulse wave (systolic surge + dicrotic notch) is non-sinusoidal. Its Fourier transform contains a strong fundamental frequency ($f_0 \approx 1.35\text{ Hz} = 81\text{ BPM}$) and a prominent second harmonic ($2f_0 \approx 2.70 - 2.82\text{ Hz} = 162 - 169\text{ BPM}$).
-2. **JPEG Compression Noise**:
-   Naive implementations convert CameraX YUV frames into JPEG and then decode to Bitmaps. JPEG 8x8 DCT quantization and 4:2:0 chroma subsampling destroy the subtle $\Delta \approx 0.5\%$ skin chrominance variation and inject high-frequency noise into the green/red channels.
-3. **Bandpass & Peak Selection Distortion**:
-   Unconstrained FFT peak search ($0.75 - 3.0\text{ Hz}$) naively selects the highest magnitude bin ($2.82\text{ Hz}$), mistaking the second harmonic for tachycardia ($169\text{ BPM}$).
-
-### The Solutions Implemented in PulseSense
+## 🏗️ Signal Processing Pipeline
 
 ```
-Raw Camera Frame (YUV_420_888 @ 30 FPS)
+Front Camera Stream (YUV_420_888 @ 30 FPS)
   │
-  ├──> Hardware Monotonic Timestamp (nanosecond clock from camera sensor)
+  ├──> Hardware Monotonic Sensor Timestamps (Zero Clock Drift)
   │
-  ├──> Direct Zero-Allocation YUV->RGB Extraction
-  │    (Direct ITU-R BT.601 math from ByteBuffers, ZERO JPEG artifacts)
+  ├──> Direct YUV -> RGB Skin Extraction (ITU-R BT.601)
   │
-  ├──> Multi-ROI Skin Aggregation (Forehead + Left Cheek + Right Cheek)
+  ├──> Multi-ROI Spatial Skin Aggregation (Forehead + Cheeks)
   │
-  ├──> POS Projection with 1.6s Chrominance Normalization Window
+  ├──> Plane-Orthogonal-to-Skin (POS) Color Space Projection
   │
-  ├──> Sparse-Regularized Tikhonov Detrending (λ = 100)
+  ├──> Tikhonov Regularized Trend Removal
   │
-  ├──> Zero-Phase Butterworth Bandpass Filter (0.75 - 2.50 Hz = 45 - 150 BPM)
+  ├──> Zero-Phase Butterworth Bandpass Filter (0.75 - 2.50 Hz / 45 - 150 BPM)
   │
-  ├──> Multi-Peak Harmonic Resolution
-  │    (Detects if peak at f_max has a sub-harmonic fundamental at f_max / 2)
+  ├──> Fast Fourier Transform (FFT) & Harmonic Peak Resolution
   │
-  ├──> 3-Point Parabolic Spectral Interpolation (Fractional-Hz precision)
-  │
-  └──> Weighted EMA Smoothing with Median Outlier Gating -> True BPM
+  └──> Exponential Moving Average (EMA) & Outlier Gating -> Final BPM
 ```
 
 ---
 
-## 📱 Camera & System Diagnostics
+## 🛠️ Tech Stack & Architecture
 
-### ADB Real-Time Diagnostic Stream
+- **Language**: Kotlin 2.0.21
+- **UI Framework**: Jetpack Compose with Material 3 & Jetpack Navigation
+- **Camera API**: CameraX (Preview + ImageAnalysis @ 640x480)
+- **Computer Vision**: ML Kit Face Detection
+- **Architecture**: Modern MVVM (Model-View-ViewModel) with Kotlin Coroutines & StateFlow
+- **Target SDK**: Android SDK 36 (Min SDK: 26 / Android 8.0+)
 
-To inspect the real-time camera pipeline and DSP diagnostics on your connected Poco F5:
+---
+
+## 🧪 Unit Test Suite
+
+The project includes a comprehensive unit test suite covering POS signal projection, Butterworth filtering, harmonic resolution, and signal buffering:
 
 ```bash
-adb logcat -s RPPG_DIAG
+# Run unit tests
+./gradlew testDebugUnitTest
 ```
 
-**Example Log Output**:
+---
+
+## 📦 Building and Running
+
+### Prerequisites
+- Android Studio Ladybug / Meerkat or later
+- Android SDK 36 (Java 17)
+- Device running Android 8.0+ (Reference device: Poco F5)
+
+### Build with Gradle
+```bash
+# Assemble Debug APK
+./gradlew assembleDebug
+```
+
+### APK Location & Installation
+The compiled debug APK is generated at:
 ```text
-D/RPPG_DIAG: [CameraDiag] Dimensions=640x480, Rot=270, HW_FPS=29.9, AcceptedFrames=480, FaceTracked=true, Motion=0.008
-D/RPPG_DIAG: [rPPG] FPS=29.9, Samples=480, Peak=2.70Hz (162 BPM), Corrected=true, Fund=1.35Hz -> Final HR=81.2 BPM, Conf=0.84, SNR=6.4dB
+app/build/outputs/apk/debug/app-debug.apk
 ```
 
----
-
-## 🧪 Unit Test Suite (16 / 16 Passed)
-
+Install via ADB:
 ```bash
-cd android-app
-.\gradlew.bat testDebugUnitTest
-```
-
-### Verified Test Cases:
-- `FFT of pure sine at 1.2 Hz gives ~72 BPM` ✅
-- `FFT of pure sine at 1.25 Hz gives ~75 BPM` ✅
-- `FFT of pure sine at 1.3 Hz gives ~78 BPM` ✅
-- `FFT of pure sine at 1.5 Hz gives ~90 BPM` ✅
-- `FFT of pure sine at 2.0 Hz gives ~120 BPM` ✅
-- `harmonic doubling within passband with strong 2nd harmonic at 2.0 Hz resolves to fundamental 60 BPM` ✅
-- `169 BPM high frequency noise at 2.82 Hz is rejected in favor of true fundamental 81 BPM` ✅
-- `engine returns null with insufficient samples` ✅
-- `engine handles empty sample list` ✅
-- `high SNR synthetic signal gives GOOD or FAIR quality` ✅
-- `pure noise BPM is within physiological bounds if returned` ✅
-- `reset clears BPM state` ✅
-- `BPM output is always within physiological range when valid` ✅
-- `RgbSignalBuffer respects max capacity` ✅
-- `RgbSignalBuffer lastN returns correct count` ✅
-- `RgbSignalBuffer computes reasonable FPS` ✅
-
----
-
-## 📲 APK Installation
-
-The compiled debug APK is located at:
-```text
-android-app/app/build/outputs/apk/debug/app-debug.apk
-```
-
-To install on your connected android:
-```bash
-adb install -r "c:\Users\Shantanu Vasagadekar\Downloads\rPPG-Toolbox-main\rPPG-Toolbox-main\android-app\app\build\outputs\apk\debug\app-debug.apk"
+adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n com.rppg.vitals/.MainActivity
 ```
+
+---
+
+## 🔒 Privacy & Security
+
+AuraHealth processes all camera frames directly in volatile memory. No video feeds, images, or biometric telemetry are ever written to disk or transmitted over the network.
+
+---
+
+## 📄 Disclaimer
+
+AuraHealth is intended for research, educational, and personal fitness monitoring purposes only. It is not a medical device and is not intended for clinical diagnosis, treatment, or prevention of any disease.

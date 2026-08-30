@@ -58,10 +58,17 @@ class VitalsViewModel(application: Application) : AndroidViewModel(application) 
         lifecycleOwner: LifecycleOwner,
         surfaceProvider: Preview.SurfaceProvider
     ) {
-        if (isRunning) return
+        if (isRunning) {
+            stopCamera()
+        }
         isRunning = true
 
         _measurementState.value = MeasurementState.CameraStarting
+        _pulseWaveform.value = emptyList()
+        _latestDiagnostics.value = null
+        rgbBuffer.clear()
+        posEngine.reset()
+        lastBpmResult = null
 
         cameraController = CameraController(
             context = getApplication<Application>().applicationContext,
@@ -78,9 +85,12 @@ class VitalsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun stopCamera() {
-        cameraController?.stopCamera()
-        signalProcessingJob?.cancel()
         isRunning = false
+        signalProcessingJob?.cancel()
+        signalProcessingJob = null
+        cameraController?.stopCamera()
+        cameraController = null
+        _measurementState.value = MeasurementState.Idle
     }
 
     // ──────────────────── Frame Processing ────────────────────

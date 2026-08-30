@@ -60,9 +60,9 @@ fun PermissionDeniedScreen(
 
             Text(
                 text = if (isPermanentlyDenied) {
-                    "Camera permission was permanently denied.\nPlease enable it in your device Settings → Apps → PulseSense → Permissions."
+                    "Camera permission was permanently denied.\nPlease enable it in your device Settings → Apps → AuraHealth → Permissions."
                 } else {
-                    "PulseSense needs camera access to measure your heart rate using rPPG technology.\n\nNo video is saved or transmitted."
+                    "AuraHealth needs camera access to measure your heart rate using rPPG technology.\n\nNo video is saved or transmitted."
                 },
                 style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary),
                 textAlign = TextAlign.Center

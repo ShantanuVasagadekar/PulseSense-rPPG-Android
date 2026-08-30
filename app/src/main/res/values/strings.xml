@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PulseSense</string>
+    <string name="app_name">AuraHealth</string>
     <string name="app_subtitle">Camera-based Vital Estimation</string>
     <string name="start_measurement">Start Measurement</string>
     <string name="on_device_processing">On-device processing</string>

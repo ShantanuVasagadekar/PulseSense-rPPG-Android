@@ -1,5 +1,6 @@
 package com.rppg.vitals.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.camera.core.Preview
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.*
@@ -41,12 +42,15 @@ fun MeasurementScreen(
     val pulseWaveform by viewModel.pulseWaveform.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Provide surface provider to ViewModel once camera is ready
-    var surfaceProvider by remember { mutableStateOf<Preview.SurfaceProvider?>(null) }
+    // Handle system back gesture
+    BackHandler {
+        onBack()
+    }
 
-    LaunchedEffect(surfaceProvider) {
-        surfaceProvider?.let { provider ->
-            viewModel.startCamera(lifecycleOwner, provider)
+    // Stop camera when leaving composition
+    DisposableEffect(lifecycleOwner) {
+        onDispose {
+            viewModel.stopCamera()
         }
     }
 
@@ -83,14 +87,11 @@ fun MeasurementScreen(
                         PreviewView(ctx).apply {
                             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                             scaleType = PreviewView.ScaleType.FILL_CENTER
+                        }.also { previewView ->
+                            viewModel.startCamera(lifecycleOwner, previewView.surfaceProvider)
                         }
                     },
-                    modifier = Modifier.fillMaxSize(),
-                    update = { previewView ->
-                        if (surfaceProvider == null) {
-                            surfaceProvider = previewView.surfaceProvider
-                        }
-                    }
+                    modifier = Modifier.fillMaxSize()
                 )
 
                 // Face guide overlay drawn on top

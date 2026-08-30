@@ -34,14 +34,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RPPGVitalsTheme {
-                PulseSenseApp(viewModel = viewModel)
+                AuraHealthApp(viewModel = viewModel)
             }
         }
     }
 }
 
 @Composable
-fun PulseSenseApp(viewModel: VitalsViewModel) {
+fun AuraHealthApp(viewModel: VitalsViewModel) {
     val navController = rememberNavController()
     val context = LocalContext.current
 
