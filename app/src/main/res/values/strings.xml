@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">PulseSense</string>
+    <string name="app_subtitle">Camera-based Vital Estimation</string>
+    <string name="start_measurement">Start Measurement</string>
+    <string name="on_device_processing">On-device processing</string>
+    <string name="camera_only">Camera only</string>
+    <string name="no_cloud_required">No cloud required</string>
+    <string name="processed_locally">Processed locally</string>
+    <string name="disclaimer">Research/demo measurement only.\nNot a medical device or diagnosis.</string>
+    <string name="camera_permission_required">Camera permission is required for rPPG measurement</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="method_label">Camera rPPG • POS</string>
+    <string name="processing_label">On-device</string>
+    <string name="measure_again">Measure Again</string>
+    <string name="heart_rate">Heart Rate</string>
+    <string name="bpm">BPM</string>
+    <string name="signal_quality">Signal Quality</string>
+    <string name="live_pulse">LIVE PULSE</string>
+    <string name="capturing">CAPTURING</string>
+    <string name="new_scan">Start New Scan</string>
+    <string name="device_local">DEVICE LOCAL</string>
+    <string name="no_data_leaves">No camera data leaves this device</string>
+</resources>
