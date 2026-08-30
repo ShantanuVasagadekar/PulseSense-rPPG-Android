@@ -61,7 +61,7 @@ Raw Camera Frame (YUV_420_888 @ 30 FPS)
 
 ---
 
-## 📱 Poco F5 Camera & System Diagnostics
+## 📱 Camera & System Diagnostics
 
 ### ADB Real-Time Diagnostic Stream
 
